@@ -1,17 +1,13 @@
+import shutil
 import json
-import pickle
+from pathlib import Path
 
 import random
 import functools
 from IPython.display import display, clear_output
 from ipywidgets import Button, Dropdown, HTML, HBox, IntSlider, FloatSlider, Textarea, Output
 
-from datetime import datetime
-
-"""
-Annotation function.
-Credits: code adapted from: https://github.com/agermanidis/pigeon/blob/master/pigeon/annotate.py
-"""
+# Annotation function. Code adapted from: https://github.com/agermanidis/pigeon/blob/master/pigeon/annotate.py
 def annotate(examples,
              options=None,
              shuffle=False,
@@ -56,9 +52,9 @@ def annotate(examples,
             print('Annotation done.')
             return
         if current_index <= 0:
-            buttons[-1].disabled = True
+            buttons[2].disabled = True
         elif current_index > 0:
-            buttons[-1].disabled = False
+            buttons[2].disabled = False
         with out:
             clear_output(wait=True)
             print(examples[current_index])
@@ -68,21 +64,25 @@ def annotate(examples,
         current_index -= 1
         set_label_text()
         if current_index <= 0:
-            buttons[-1].disabled = True
+            buttons[2].disabled = True
         elif current_index > 0:
-            buttons[-1].disabled = False
+            buttons[2].disabled = False
         with out:
             clear_output(wait=True)
             print(examples[current_index])
 
     def add_annotation(annotation):
-        annotations[examples[current_index]] = annotation
-        annotation = annotation.lower().strip()
-        if (annotation[0] == "q" and annotation[1:].isnumeric()) or (annotation == "na"):
-            show_next()
+        annotation = annotation.strip()
+        if annotation != "":
+            if (annotation[0].lower() == "q" and annotation[1:].isnumeric()) or (annotation == "not_in_wikidata"):
+                annotations[examples[current_index]] = annotation
+                show_next()
 
     def skip(btn):
         show_next()
+
+    def no_match(btn):
+        add_annotation("not_in_wikidata")
 
     def back(btn):
         show_previous()
@@ -101,12 +101,16 @@ def annotate(examples,
     btn.on_click(on_click)
     buttons.append(btn)
 
-    btn = Button(description='skip')
-    btn.on_click(skip)
+    btn = Button(description='not in wikidata')
+    btn.on_click(no_match)
     buttons.append(btn)
 
     btn = Button(description='back')
     btn.on_click(back)
+    buttons.append(btn)
+
+    btn = Button(description='skip')
+    btn.on_click(skip)
     buttons.append(btn)
 
     box = HBox(buttons)
@@ -120,12 +124,25 @@ def annotate(examples,
     return annotations
 
 
-"""
-Store annotations as a pickle file.
-"""
-def store_annotations(name, annotations):
-    # Store annotations as a json file:
-    json.dump(annotations, open(name + "_" + datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + 'annotations.json', 'w' ) )
-    # Store annotations as a pickle file as well:
-    with open(name + "_" + datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + 'annotations.pkl', 'wb') as fp:
-        pickle.dump(annotations, fp)
+# Store annotations as a json file:
+def store_annotations(name, annotations, data_to_annotate):
+    annotations_path = name + "_" + 'annotations.json'
+    for x in annotations:
+        data_to_annotate[x] = annotations[x]
+    json.dump(data_to_annotate, open(annotations_path, 'w'))
+
+    
+# Load data:
+def load_data(name):
+    annotations_path = name + "_" + 'annotations.json'
+    
+    # First time annotating: create your own annotation file:
+    if not Path(annotations_path).exists():
+        shutil.copyfile('samples_to_annotate.json', annotations_path)
+
+    # Load annotation file:
+    data_to_annotate = dict()
+    with open(annotations_path) as f:
+        data_to_annotate = json.load(f)
+        
+    return data_to_annotate
