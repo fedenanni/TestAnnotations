@@ -1,3 +1,4 @@
+import os
 import shutil
 import json
 from pathlib import Path
@@ -125,7 +126,8 @@ def annotate(examples,
 
 
 # Store annotations as a json file:
-def store_annotations(name, annotations, data_to_annotate):
+def store_annotations(annotations, data_to_annotate):
+    name = os.getcwd().split("/")[2].split("jupyter-")[1]
     annotations_path = name + "_" + 'annotations.json'
     for x in annotations:
         data_to_annotate[x] = annotations[x]
@@ -133,7 +135,8 @@ def store_annotations(name, annotations, data_to_annotate):
 
     
 # Load data:
-def load_data(name):
+def load_data():
+    name = os.getcwd().split("/")[2].split("jupyter-")[1]
     annotations_path = name + "_" + 'annotations.json'
     
     # First time annotating: create your own annotation file:
