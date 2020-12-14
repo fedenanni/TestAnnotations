@@ -128,7 +128,8 @@ def annotate(examples,
 # Store annotations as a json file:
 def store_annotations(annotations, data_to_annotate):
     name = os.getcwd().split("/")[2].split("jupyter-")[1]
-    annotations_path = name + "_" + 'annotations.json'
+    path ="/srv/data/bho_wikidata/"+name+"/"
+    annotations_path = path+ name + "_" + 'annotations.json'
     for x in annotations:
         data_to_annotate[x] = annotations[x]
     json.dump(data_to_annotate, open(annotations_path, 'w'))
@@ -137,11 +138,13 @@ def store_annotations(annotations, data_to_annotate):
 # Load data:
 def load_data():
     name = os.getcwd().split("/")[2].split("jupyter-")[1]
-    annotations_path = name + "_" + 'annotations.json'
+    path ="/srv/data/bho_wikidata/"+name+"/"
+    annotations_path = path+ name + "_" + 'annotations.json'
     
     # First time annotating: create your own annotation file:
     if not Path(annotations_path).exists():
-        shutil.copyfile('samples_to_annotate.json', annotations_path)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        shutil.copyfile('/srv/data/bho_wikidata/samples_to_annotate.json', annotations_path)
 
     # Load annotation file:
     data_to_annotate = dict()
