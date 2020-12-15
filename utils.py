@@ -8,39 +8,63 @@ import functools
 from IPython.display import display, clear_output
 from ipywidgets import Button, Dropdown, HTML, HBox, IntSlider, FloatSlider, Textarea, Output
 
+
+def load_data(path, name):
+
+    annotations_path = path + name + "/annotations.json"
+    
+    # First time annotating: create your own annotation file:
+    if not Path(annotations_path).exists():
+        os.makedirs(os.path.dirname(annotations_path), exist_ok=True)
+        shutil.copyfile(path + 'samples_to_annotate.json', annotations_path)
+
+    # Load annotation file:
+    data_to_annotate = dict()
+    with open(annotations_path) as f:
+        data_to_annotate = json.load(f)
+
+    return data_to_annotate
+
+
+# Store annotations as a json file:
+def store_annotations(path, name, annotations, data_to_annotate):
+
+    annotations_path = path + name + "/annotations.json"
+
+    for x in annotations:
+        data_to_annotate[x] = annotations[x]
+    json.dump(data_to_annotate, open(annotations_path, 'w'))
+
+
 # Annotation function. Code adapted from: https://github.com/agermanidis/pigeon/blob/master/pigeon/annotate.py
-def annotate(examples,
-             options=None,
-             shuffle=False,
-             include_skip=True,
-             display_fn=display):
+def annotate():
+
+    name = os.getcwd().split("/")[2].split("jupyter-")[1]
+    path ="/srv/data/bho_wikidata/"+name+"/"
+
+    data_to_annotate = load_data(path, name)
+
+    # examples: list(any), list of items to annotate
+    examples = [r for r in data_to_annotate if data_to_annotate[r] == ""]
+
     """
     Build an interactive widget for annotating a list of input examples.
-    Parameters
-    ----------
-    examples: list(any), list of items to annotate
-    options: list(any) or tuple(start, end, [step]) or None
-             if list: list of labels for binary classification task (Dropdown or Buttons)
-             if tuple: range for regression task (IntSlider or FloatSlider)
-             if None: arbitrary text input (TextArea)
-    shuffle: bool, shuffle the examples before annotating
-    include_skip: bool, include option to skip example while annotating
-    display_fn: func, function for displaying an example to the user
-    Returns
-    -------
-    annotations : list of tuples, list of annotated examples (example, label)
     """
     examples = list(examples)
-    if shuffle:
-        random.shuffle(examples)
 
     annotations = dict()
     current_index = -1
 
+    total_examples = len(data_to_annotate)
+    done_previously = 0
+    for k in data_to_annotate:
+        if data_to_annotate[k]:
+            done_previously += 1
+
     def set_label_text():
         nonlocal count_label
-        count_label.value = '{} examples annotated, example number {} out of {}'.format(
-            len(annotations), current_index, len(examples)
+        count_label.value = '{} examples annotated out of {}'.format(
+            done_previously + len(annotations), len(data_to_annotate)
         )
 
     def show_next():
@@ -77,6 +101,7 @@ def annotate(examples,
         if annotation != "":
             if (annotation[0].lower() == "q" and annotation[1:].isnumeric()) or (annotation == "not_in_wikidata"):
                 annotations[examples[current_index]] = annotation
+                store_annotations(path, name, annotations, data_to_annotate)
                 show_next()
 
     def skip(btn):
@@ -122,33 +147,22 @@ def annotate(examples,
 
     show_next()
 
-    return annotations
-
-
-# Store annotations as a json file:
-def store_annotations(annotations, data_to_annotate):
-    name = os.getcwd().split("/")[2].split("jupyter-")[1]
-    path ="/srv/data/bho_wikidata/"+name+"/"
-    annotations_path = path+ name + "_" + 'annotations.json'
-    for x in annotations:
-        data_to_annotate[x] = annotations[x]
-    json.dump(data_to_annotate, open(annotations_path, 'w'))
 
     
-# Load data:
-def load_data():
-    name = os.getcwd().split("/")[2].split("jupyter-")[1]
-    path ="/srv/data/bho_wikidata/"+name+"/"
-    annotations_path = path+ name + "_" + 'annotations.json'
+# # Load data:
+# def load_data():
+#     name = os.getcwd().split("/")[2].split("jupyter-")[1]
+#     path ="/srv/data/bho_wikidata/"+name+"/"
+#     annotations_path = path+ name + "_" + 'annotations.json'
     
-    # First time annotating: create your own annotation file:
-    if not Path(annotations_path).exists():
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        shutil.copyfile('/srv/data/bho_wikidata/samples_to_annotate.json', annotations_path)
+#     # First time annotating: create your own annotation file:
+#     if not Path(annotations_path).exists():
+#         os.makedirs(os.path.dirname(path), exist_ok=True)
+#         shutil.copyfile('/srv/data/bho_wikidata/samples_to_annotate.json', annotations_path)
 
-    # Load annotation file:
-    data_to_annotate = dict()
-    with open(annotations_path) as f:
-        data_to_annotate = json.load(f)
+#     # Load annotation file:
+#     data_to_annotate = dict()
+#     with open(annotations_path) as f:
+#         data_to_annotate = json.load(f)
         
-    return data_to_annotate
+#     return data_to_annotate
