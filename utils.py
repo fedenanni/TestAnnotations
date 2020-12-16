@@ -11,7 +11,7 @@ from ipywidgets import Button, Dropdown, HTML, HBox, IntSlider, FloatSlider, Tex
 
 def load_data(path, name):
 
-    annotations_path = path + name + "/annotations.json"
+    annotations_path = path + name + "/" + name + "_annotations.json"
     
     # First time annotating: create your own annotation file:
     if not Path(annotations_path).exists():
@@ -29,7 +29,7 @@ def load_data(path, name):
 # Store annotations as a json file:
 def store_annotations(path, name, annotations, data_to_annotate):
 
-    annotations_path = path + name + "/annotations.json"
+    annotations_path = path + name + "/" + name + "_annotations.json"
 
     for x in annotations:
         data_to_annotate[x] = annotations[x]
@@ -40,7 +40,7 @@ def store_annotations(path, name, annotations, data_to_annotate):
 def annotate():
 
     name = os.getcwd().split("/")[2].split("jupyter-")[1]
-    path ="/srv/data/bho_wikidata/"+name+"/"
+    path ="/srv/data/bho_wikidata/"
 
     data_to_annotate = load_data(path, name)
 
